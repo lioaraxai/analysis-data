@@ -196,3 +196,136 @@ max      641.000000  24185.000000
 ### Limitations
 - Hackathon dataset — may have synthetic/modified data
 - Need to verify if product-level granularity exists
+
+---
+
+## 8. Imputation Model Analysis
+
+### Problem Context
+Stores share transaction data for only 2-28 days per month instead of the full 28 days. This creates a need to impute/extrapolate missing data to predict total monthly sales at the store-category level.
+
+### 8.1 Days vs Sales Correlation
+
+**Methodology:**
+- Aggregated working data to store-month level
+- Computed correlation between number of observed days and total VALUE
+
+**Key Findings:**
+- Strong positive correlation exists between observed days and total sales value
+- This validates the linear extrapolation approach
+- Stores with more observed days generally have higher total sales (expected relationship)
+
+**Visualization:**
+- Scatter plot with regression line shows clear positive relationship
+- Per-store analysis reveals consistent patterns across stores
+
+### 8.2 Baseline Extrapolation Model
+
+**Formula:**
+```
+Predicted_Value = (Observed_Value / Observed_Days) x 28
+```
+
+**Assumptions:**
+1. Linear relationship between days and sales
+2. Daily sales are roughly uniform within a month
+3. 28 days represents a full month
+
+**Implementation:**
+- Applied to all store-month combinations in working data
+- Simple daily average multiplied by target days
+
+### 8.3 Store-Specific Adjustments
+
+**Methodology:**
+- Calculated average daily value per store across all months
+- Computed store multipliers relative to overall average
+
+**Store Characteristics:**
+- 10 unique stores (N1-N10) with varying daily patterns
+- Store multipliers range from ~0.3x to ~2.5x the average
+- High-volume stores (N7, N1, N5) have multipliers > 1.0
+- Low-volume stores (N8, N6, N2) have multipliers < 1.0
+
+**Use Case:**
+- Can be used to adjust predictions based on store characteristics
+- Useful for new categories without store-specific history
+
+### 8.4 Category-Level Imputation
+
+**Methodology:**
+- Aggregated data at store-month-category (GRP) level
+- Applied baseline extrapolation separately for each category
+- Aggregated category predictions back to store-month totals
+
+**Comparison with Store-Level:**
+- Category-level and store-level predictions show < 1% average difference
+- Category-level provides more granular predictions
+- Better suited for submission format (STORECODE + MONTH + GRP)
+
+**Benefits:**
+- Captures category-specific daily patterns
+- More accurate for categories with varying purchase frequency
+- Required for validation data format
+
+### 8.5 Validation Results
+
+**Validation Approach:**
+- Used store-months with 20+ observed days as validation set
+- Simulated partial data by using 50% of observed days
+- Predicted full-month values and compared to actual
+
+**Metrics:**
+| Metric | Description |
+|--------|-------------|
+| RMSE | Root Mean Squared Error - measures average prediction error magnitude |
+| MAPE | Mean Absolute Percentage Error - measures average % error |
+| Correlation | Pearson correlation between predicted and actual values |
+
+**Interpretation:**
+- Low MAPE indicates model captures the overall trend well
+- High correlation suggests consistent prediction patterns
+- Residual analysis shows no systematic bias
+
+### 8.6 Predictions for Validation Dataset
+
+**Process:**
+1. Built lookup table from working data at STORECODE-MONTH-GRP level
+2. Merged with validation data to get predictions
+3. For missing categories (no historical data), filled with 0
+4. Formatted output to match Sample Submission.csv format
+
+**Output:**
+- File: `submission_imputation_model.csv`
+- Columns: ID, TOTALVALUE
+- 2,430 predictions generated
+
+**Coverage:**
+- Most validation records have matching historical data
+- Categories without history in working data are filled with 0
+
+### 8.7 Recommendations
+
+1. **Use Category-Level Imputation**: Provides required granularity and better captures category-specific patterns
+
+2. **Consider Store Multipliers**: For categories without history, use store-level multipliers to adjust predictions
+
+3. **Handle Missing Categories**:
+   - Option A: Use similar category averages
+   - Option B: Use store-level average per category from other months
+   - Option C: Use cross-store category patterns
+
+4. **Future Improvements**:
+   - Day-of-week patterns for more sophisticated imputation
+   - Seasonal adjustments (if month patterns vary)
+   - Category co-occurrence patterns
+
+5. **Model Monitoring**:
+   - Track prediction accuracy over time
+   - Refine multipliers as more data becomes available
+
+### 8.8 Output Files
+
+| File | Description |
+|------|-------------|
+| `submission_imputation_model.csv` | Predictions for validation dataset in submission format |

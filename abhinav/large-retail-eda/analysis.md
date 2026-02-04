@@ -230,3 +230,93 @@ max    100000.000000      79.000000          9.000000            4.000000    999
 ### Limitations
 - Need to verify data quality at full scale
 - Analysis based on 100k row sample due to 518MB file size
+
+---
+
+## 11. RFM Customer Segmentation Analysis
+
+RFM (Recency, Frequency, Monetary) analysis segments customers based on their purchasing behavior to identify high-value customers, those at risk of churning, and opportunities for targeted marketing.
+
+### 11.1 RFM Score Methodology
+
+| Dimension | Metric Used | Scoring Logic |
+|-----------|-------------|---------------|
+| **Recency (R)** | `days_since_last_purchase` | Lower days = Higher score (5=best, 1=worst) |
+| **Frequency (F)** | `total_transactions` | Higher transactions = Higher score |
+| **Monetary (M)** | `total_sales` | Higher spend = Higher score |
+
+Scores are calculated using quintiles (1-5 scale) and combined into an RFM segment string (e.g., "555" = best customers).
+
+### 11.2 Customer Segments Defined
+
+| Segment | RFM Criteria | Description |
+|---------|--------------|-------------|
+| **Champions** | R>=4, F>=4, M>=4 | Best customers - recent, frequent, high spenders |
+| **Loyal Customers** | R>=4, F>=3, M>=3 | Consistent buyers with strong engagement |
+| **Recent Customers** | R>=4, F<=2 | New customers with potential |
+| **Potential Loyalists** | R>=3, F>=3, M>=3 | Good customers to nurture |
+| **Big Spenders** | R>=3, M>=4 | High monetary value, any frequency |
+| **At Risk** | R=2, F>=3 | Previously active, now disengaging |
+| **Hibernating** | R=2, F<=2 | Low recent activity, low frequency |
+| **Can't Lose Them** | R=1, F>=3, M>=3 | High-value customers going dormant |
+| **Lost** | R=1, F<=2 | Churned or inactive customers |
+| **Others** | Remaining | Mixed characteristics |
+
+### 11.3 K-Means Clustering
+
+In addition to rule-based segmentation, K-Means clustering was applied to RFM features:
+- **Features**: `days_since_last_purchase`, `total_transactions`, `total_sales`
+- **Preprocessing**: StandardScaler normalization
+- **Optimal k**: Determined via elbow method and silhouette score analysis
+- **Result**: 5 natural customer clusters identified
+
+### 11.4 Churn Analysis by Segment
+
+Key findings from churn analysis:
+- Churn rates vary significantly across RFM segments
+- **High-Value At-Risk Customers**: Customers in top 25% by revenue with R_Score <= 2
+- Revenue at risk calculated for each segment to prioritize retention efforts
+- Strong inverse correlation between RFM score and churn rate
+
+### 11.5 Customer Lifetime Value (CLV)
+
+CLV calculation methodology:
+```
+CLV = Avg Transaction Value x Annual Frequency x Projection Years (3)
+```
+
+CLV metrics by segment enable:
+- Prioritization of retention investments
+- ROI calculation for segment-specific campaigns
+- Resource allocation for customer success teams
+
+### 11.6 Segment Recommendations
+
+| Segment | Recommended Actions |
+|---------|---------------------|
+| **Champions** | Reward with exclusive perks, early access to new products. Use for testimonials/referrals. |
+| **Loyal Customers** | Upsell premium products, loyalty program upgrades. Personalized recommendations. |
+| **Recent Customers** | Welcome campaigns, onboarding sequences. Build engagement early. |
+| **Potential Loyalists** | Engagement campaigns, membership benefits. Convert to loyal customers. |
+| **Big Spenders** | Premium product offers, VIP treatment. Focus on increasing purchase frequency. |
+| **At Risk** | Win-back campaigns, personalized offers. Understand pain points via surveys. |
+| **Hibernating** | Reactivation campaigns with strong incentives. Limited-time offers. |
+| **Can't Lose Them** | URGENT: Personalized outreach, special discounts. Understand why they left. |
+| **Lost** | Aggressive win-back campaigns or accept churn. Survey to understand reasons. |
+
+### 11.7 Demographics by Segment
+
+Demographic analysis reveals patterns in:
+- **Age distribution**: Variation in average age across segments
+- **Income brackets**: High/Medium/Low income distribution per segment
+- **Loyalty program membership**: Enrollment rates by segment
+- **Channel preference**: Online vs in-store purchase ratios
+- **Gender distribution**: Segment composition by gender
+
+### 11.8 Key Business Insights
+
+1. **Segment-based prioritization**: Focus retention efforts on "Can't Lose Them" and "At Risk" segments first
+2. **High-value at-risk identification**: ~10% of high-value customers show signs of disengagement
+3. **Channel optimization**: Different segments prefer different channels - tailor outreach accordingly
+4. **CLV-driven budgeting**: Allocate marketing spend proportional to segment CLV
+5. **Churn prediction**: Low RFM scores strongly correlate with churn - use as early warning

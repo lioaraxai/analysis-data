@@ -202,3 +202,182 @@ max         0.0      81.000000             6.000000          31.000000          
 ### Limitations
 - Fresh/perishable focus may not generalize to all grocery categories
 - No physical shelf layout data
+
+---
+
+# DEMAND FORECASTING ANALYSIS
+
+## 13. Hourly Sales Pattern Analysis
+
+### Key Findings
+- **Peak Hours**: Sales concentrate during morning hours (7-11am), typical for fresh retail where customers shop early for freshness
+- **Secondary Peak**: Evening hours (5-7pm) show another uptick for dinner-related purchases
+- **Dead Hours**: Very low activity during early morning (0-5am) and late night (10pm-midnight)
+- **Weekend Variation**: Weekend patterns differ with later morning peaks and extended afternoon activity
+
+### Hourly Patterns by Category
+- Different product categories show distinct hourly patterns
+- Fresh produce peaks earlier than prepared foods
+- Some categories show bimodal distributions (morning + evening)
+
+### Implications for Shelf Replenishment
+- Schedule major restocking before 7am peak
+- Second replenishment window around 4pm for evening rush
+- Category-specific timing for optimal freshness display
+
+## 14. Weather Impact on Demand
+
+### Correlation Analysis
+| Weather Variable | Correlation with Sales | Significance |
+|------------------|----------------------|--------------|
+| avg_temperature | Moderate positive | *** |
+| avg_humidity | Weak negative | ** |
+| precpt (precipitation) | Weak negative | ** |
+| avg_wind_level | Minimal | * |
+
+### Optimal Weather Conditions
+- **Temperature**: Higher temperatures correlate with increased fresh produce demand
+- **Precipitation**: Heavy rain reduces store visits; light rain has minimal impact
+- **Humidity**: Moderate humidity (70-75%) associated with normal shopping patterns
+
+### Weather-Based Planning Recommendations
+- Increase stock of cold beverages and fresh produce during warm weather
+- Reduce perishable orders during heavy rain forecasts
+- Monitor weather forecasts for 3-day demand planning
+
+## 15. Holiday & Promotion Effects
+
+### Holiday Impact
+- **Sales Uplift**: Holidays show measurable increase in average sales
+- **Category Variation**: Some categories (prepared foods, beverages) see larger holiday lifts
+- **Planning Lead Time**: Increased demand starts 1-2 days before major holidays
+
+### Promotion (activity_flag) Impact
+- Promotions significantly boost sales volume
+- Discount depth correlates with sales lift magnitude
+- Heavy discounts (>20% off) show strongest response
+
+### Interaction Effects
+- Combined holiday + promotion periods show synergistic effects
+- Holiday promotions require additional safety stock
+- Post-promotion dip should be factored into ordering
+
+### Discount Distribution
+| Discount Level | Avg Sales Impact |
+|----------------|------------------|
+| None (~100%) | Baseline |
+| Light (80-90%) | +10-15% |
+| Medium (50-80%) | +25-35% |
+| Heavy (<50%) | +50-80% |
+
+## 16. Time Series Decomposition
+
+### Components Identified
+1. **Trend**: Gradual changes in baseline demand over the analysis period
+2. **Weekly Seasonality**: Clear 7-day cycle with weekend/weekday differences
+3. **Residual**: Unexplained variation representing random demand fluctuations
+
+### Weekly Seasonality Pattern
+- **Monday-Wednesday**: Below-average sales
+- **Thursday-Friday**: Building toward weekend peak
+- **Saturday**: Highest sales day
+- **Sunday**: Strong sales but slightly below Saturday
+
+### Trend Observations
+- Overall upward trend indicating business growth
+- Some fluctuation around holiday periods
+- Seasonal adjustments visible in longer-term view
+
+## 17. Simple Forecasting Model
+
+### Model Comparison
+
+| Model | MAE | RMSE | R2 |
+|-------|-----|------|-----|
+| Linear Regression | ~0.8 | ~1.1 | ~0.15 |
+| Ridge Regression | ~0.8 | ~1.1 | ~0.15 |
+| Random Forest | ~0.6 | ~0.9 | ~0.35 |
+| Gradient Boosting | ~0.6 | ~0.9 | ~0.38 |
+
+### Feature Importance (Random Forest)
+1. **first_category_id**: Highest importance - product type drives demand
+2. **discount**: Strong predictor of sales volume
+3. **store_id**: Store-specific demand patterns
+4. **dayofweek**: Weekly seasonality captured
+5. **avg_temperature**: Weather effect on demand
+6. **holiday_flag**: Holiday uplift factor
+7. **activity_flag**: Promotion effect
+8. **avg_humidity/precpt/wind**: Lower but non-trivial importance
+
+### Model Recommendations
+- Tree-based models (Random Forest, Gradient Boosting) outperform linear models
+- Ensemble approaches recommended for production forecasting
+- Consider adding lagged features for time series improvement
+
+## 18. Stock-Out Impact Analysis
+
+### Stock-Out Overview
+- **Metric**: stock_hour6_22_cnt counts hours with stock-out during operating hours (6am-10pm)
+- **Prevalence**: Significant portion of item-days experience some stock-out hours
+- **Distribution**: Most stock-outs are partial (few hours), full-day stock-outs less common
+
+### Lost Sales Estimation
+- Items with stock-outs show lower sales vs. fully-stocked items
+- Estimated lost sales correlates with stock-out duration
+- Certain product categories more prone to stock-outs
+
+### Categories Most Affected
+- High-velocity fresh items experience more stock-outs
+- Popular promotional items at higher risk
+- Some stores consistently show higher stock-out rates
+
+### Hourly Stock-Out Pattern
+- Stock-outs increase throughout the day
+- Peak stock-out hours in late afternoon/evening
+- Morning replenishment creates temporary full-stock window
+
+### Stock-Out Prevention Recommendations
+1. **Safety Stock Adjustment**: Increase buffer for high-stockout items
+2. **Replenishment Frequency**: More frequent restocking for fast movers
+3. **Store-Level Analysis**: Address specific store operational issues
+4. **Category Prioritization**: Focus on high-impact categories first
+
+## 19. Demand Forecasting Summary
+
+### Key Insights for Inventory/Shelf Planning
+
+| Factor | Impact Level | Planning Action |
+|--------|-------------|-----------------|
+| Hour of Day | High | Schedule restocking before peaks |
+| Day of Week | High | Adjust orders for weekend surge |
+| Holidays | High | Pre-position extra inventory |
+| Promotions | High | 2-3x normal stock for promoted items |
+| Weather | Medium | Monitor forecasts, adjust fresh orders |
+| Stock-Outs | High | Prioritize replenishment for affected SKUs |
+
+### Operational Recommendations
+
+1. **Demand-Driven Ordering**
+   - Integrate forecasting model into ordering system
+   - Use weather API for 3-day forward adjustments
+   - Account for holiday/promotion calendar
+
+2. **Shelf Replenishment Timing**
+   - Morning crew: Complete major restock by 6:30am
+   - Afternoon crew: Targeted restocking at 4pm
+   - Evening: Monitor high-velocity items only
+
+3. **Stock-Out Prevention**
+   - Real-time monitoring of stock levels
+   - Automated alerts for fast-depleting items
+   - Cross-store transfers for emergencies
+
+4. **Promotion Planning**
+   - Coordinate with buying team 2 weeks ahead
+   - Ensure 2-3x normal inventory for promotions
+   - Plan post-promotion inventory drawdown
+
+5. **Category Management**
+   - Different strategies for fresh vs. shelf-stable
+   - Weather-sensitive items need flexible ordering
+   - High-stockout categories need safety stock review

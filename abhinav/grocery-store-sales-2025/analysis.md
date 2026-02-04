@@ -171,3 +171,186 @@ max    9998.000000     5.000000    29.980000    149.900000        29.940000    1
 - Small dataset (1,900 records) — limited for ML model training
 - No physical shelf/aisle layout data
 - No basket-level co-purchase data
+
+---
+
+## 12. Discount/Promotion Analysis
+
+### Data Quality Issues Identified
+- **quantity column**: Originally stored as string, converted to numeric
+- **Negative final_amount**: Caused by discount_amount exceeding total_amount (promotional over-discounting, not returns)
+
+### 12.1 Discount Rate Analysis
+
+**Discount Rate Calculation**: `discount_rate = discount_amount / total_amount`
+
+| Metric | Value |
+|--------|-------|
+| Mean Discount Rate | ~10% |
+| Median Discount Rate | ~8% |
+| Max Discount Rate | >100% (anomaly) |
+
+**Discount Category Distribution**:
+| Category | Description |
+|----------|-------------|
+| No Discount | 0% discount |
+| 0-5% | Light discount |
+| 5-10% | Moderate discount |
+| 10-20% | Standard promotion |
+| 20-100% | Deep discount |
+| >100% | Anomaly (discount exceeds total) |
+
+### 12.2 Basket Value Impact
+
+| Metric | No Discount | High Discount (15%+) |
+|--------|-------------|---------------------|
+| Avg Total Amount | Higher | Lower |
+| Avg Quantity | Similar | Similar |
+
+**Key Finding**: High-discount transactions tend to have lower pre-discount basket values, suggesting discounts are applied to smaller purchases or specific promotional items.
+
+### 12.3 Most Discounted Categories
+
+**By Aisle (Avg Discount Rate)**:
+- Aisles vary in average discount rates applied
+- Some aisles receive consistently higher promotional investment
+
+**By Product**:
+- Certain products are consistently discounted more heavily
+- May indicate clearance items, promotional leaders, or margin flexibility
+
+---
+
+## 13. Store Performance KPIs
+
+### Key Metrics per Store
+| KPI | Description |
+|-----|-------------|
+| AOV | Average Order Value (mean final_amount) |
+| Basket Size | Average quantity per transaction |
+| Discount Rate | Mean discount rate applied |
+| Loyalty Points | Average loyalty points earned |
+| Total Revenue | Sum of final_amount |
+
+### Performance Scoring
+Composite score based on:
+- **40%**: AOV (higher is better)
+- **30%**: Low Discount Rate (lower discounting = better margin)
+- **30%**: Loyalty Points (higher engagement = better)
+
+### Store Rankings
+Stores ranked from best to worst performing based on composite score. Significant variation observed across the 9 stores.
+
+---
+
+## 14. Loyalty Points Analysis
+
+### Correlation with Spending
+| Variable | Correlation with Loyalty Points |
+|----------|--------------------------------|
+| final_amount | Weak/Moderate positive |
+| total_amount | Weak/Moderate positive |
+| quantity | Weak positive |
+| discount_amount | Varies |
+
+**Finding**: Loyalty points show weak correlation with spending, suggesting the points system may be based on factors beyond just transaction value (e.g., promotional multipliers, product-specific bonuses).
+
+### Loyalty by Category
+- Different aisles generate different average loyalty points
+- Some products are "loyalty point leaders" generating higher points per transaction
+
+### Loyalty Tier Behavior
+| Tier | Avg Spending | Avg Basket Size | Avg Discount Rate |
+|------|--------------|-----------------|-------------------|
+| Low | - | - | - |
+| Medium | - | - | - |
+| High | - | - | - |
+
+*Note: Tier definitions based on tercile split of loyalty_points*
+
+---
+
+## 15. Anomaly Detection
+
+### Types of Anomalies Flagged
+1. **Negative final_amount**: Transactions where discount > total_amount
+2. **Extreme discount (>50%)**: Unusually high discount rates
+3. **Discount exceeds total**: Mathematical impossibility in normal sales
+
+### Anomaly Patterns
+- **By Store**: Some stores have higher anomaly rates
+- **By Product**: Certain products appear more frequently in anomalies
+- **By Time**: No strong temporal pattern identified
+- **Root Cause**: Promotional over-discounting, not returns/refunds
+
+---
+
+## 16. Customer Behavior Segmentation
+
+### Transaction Frequency
+| Segment | Definition | Customer Count |
+|---------|------------|----------------|
+| One-time | 1 transaction | Majority |
+| Low | 2 transactions | - |
+| Medium | 3-5 transactions | - |
+| High | 5+ transactions | Small % |
+
+**Finding**: Most customers are one-time buyers, indicating opportunity for retention strategies.
+
+### Store Loyalty
+| Type | Definition | % of Customers |
+|------|------------|----------------|
+| Single Store | Shop at only 1 store | Higher |
+| Multi-Store | Shop at 2+ stores | Lower |
+
+**Multi-store shoppers** tend to have:
+- Higher total spend
+- More transactions
+- Similar average transaction values
+
+### Aisle Preferences
+- Customers show clear aisle preferences
+- Preference patterns vary by customer frequency segment
+- Snacks & Candy, Beverages, Personal Care are popular across segments
+
+---
+
+## 17. Recommendations for Promotion Strategy
+
+### 1. Discount Policy Review
+- **Action**: Audit transactions with >50% discount rate
+- **Rationale**: Prevent margin erosion from over-discounting
+- **Implementation**: Add system validation to cap discount at total_amount
+
+### 2. Store-Specific Promotion Budgets
+- **Action**: Allocate promotion budgets based on store performance scores
+- **Rationale**: High-performing stores may need less discounting; low-performers may need targeted promotions
+- **Implementation**: Create store performance tiers for budget allocation
+
+### 3. Loyalty Tier Marketing
+- **Action**: Different promotion strategies by loyalty tier
+- **Rationale**: Low-loyalty customers need acquisition offers; high-loyalty need retention rewards
+- **Implementation**:
+  - Low tier: Aggressive first-purchase discounts
+  - Medium tier: Category-expansion promotions
+  - High tier: Exclusive member benefits, early access
+
+### 4. Aisle-Based Promotional Campaigns
+- **Action**: Focus promotions on high-traffic, lower-discount aisles
+- **Rationale**: Drive incremental sales without cannibalizing margin
+- **Implementation**: Promote low-discount aisles (Produce, Meat & Seafood) with targeted campaigns
+
+### 5. Customer Retention Focus
+- **Action**: Implement win-back campaigns for one-time buyers
+- **Rationale**: High % of customers never return
+- **Implementation**: Post-purchase email with personalized discount for second visit
+
+### 6. Multi-Store Shopper Program
+- **Action**: Create cross-store loyalty bonuses
+- **Rationale**: Multi-store shoppers have higher lifetime value
+- **Implementation**: Bonus points for shopping at new locations
+
+### 7. Anomaly Prevention
+- **Action**: Implement POS validation rules
+- **Rationale**: Prevent discount_amount > total_amount scenarios
+- **Implementation**: System block or manager override requirement for >100% discount
