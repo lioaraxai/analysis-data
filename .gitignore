@@ -1,0 +1,35 @@
+# Colleague's analysis (separate repo)
+analysis-data/
+
+# Data files - exclude from repo
+*.csv
+*.xlsx
+*.xls
+*.json
+*.parquet
+*.pickle
+*.pkl
+*.zip
+*.tar.gz
+*.7z
+
+# Large datasets
+data/
+datasets/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
